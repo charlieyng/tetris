@@ -165,6 +165,47 @@ tetris_print(struct tetris *t) {
         printf("~");
     printf("\n");
 }
+int tetris_collidetest(struct tetris *t, int player) {
+    int x, y, X, Y;
+    if (player == PLAYER1) {
+        struct tetris_block b = t->current;
+        struct tetris_block c = t->current2;
+        for (x = 0; x < b.w; x++) {
+            for (y = 0; y < b.h; y++) {
+                X = t->x + x;
+                Y = t->y + y;
+                if (b.data[y][x] != '.') {
+                    if (X >= t->x2 && Y >= t->y2 && X < (t->x2 + t->current2.w) && 
+                        Y < (t->y2 + t->current2.h) && t->current2.data[Y - t->y2][X - t->x2] != '.') {
+                        // fprintf(stderr, "X = %d, Y = %d \n", X, Y);
+                        // fprintf(stderr, "current2.w = %d, current2.h = %d \n", t->current2.w, t->current2.h);
+                        // fprintf(stderr, "x = %d, y = %d \n", x, y);
+                        // fprintf(stderr, "current2.data[y - t->y2][x - t->x2] = '%c' \n", t->current2.data[y - t->y2][x - t->x2]);
+
+
+                        // fprintf(stderr, "x2 = %d, y2 = %d\n", t->x2, t->y2);
+                        return 1;
+                    }
+                }
+            }
+        }
+    } else {
+        struct tetris_block b = t->current2;       
+        for (x = 0; x < b.w; x++) {
+            for (y = 0; y < b.h; y++) {
+                X = t->x2 + x;
+                Y = t->y2 + y;
+                if (b.data[y][x] != '.') {
+                    if (X >= t->x && Y >= t->y && X < (t->x + t->current.w) && 
+                        Y < (t->y + t->current.h) && t->current.data[Y - t->y][X - t->x] != '.') {
+                        return 1;
+                    }
+                }
+            }
+        }
+    }
+    return 0;
+}
 //returns 1 if the current piece hits something
 int
 tetris_hittest(struct tetris *t, int player) {
@@ -184,17 +225,11 @@ tetris_hittest(struct tetris *t, int player) {
                             (X >= 0 && X < t->w && Y >= 0 && t->game[X][Y] != '.')) {
                         return 1;
                     }
-                    if (X >= t->x2 && Y >= t->y2 && X < (t->x2 + t->current2.w) && 
-                        Y < (t->y2 + t->current2.h) && t->current2.data[Y - t->y2][X - t->x2] != '.') {
-                        // fprintf(stderr, "X = %d, Y = %d \n", X, Y);
-                        // fprintf(stderr, "current2.w = %d, current2.h = %d \n", t->current2.w, t->current2.h);
-                        // fprintf(stderr, "x = %d, y = %d \n", x, y);
-                        // fprintf(stderr, "current2.data[y - t->y2][x - t->x2] = '%c' \n", t->current2.data[y - t->y2][x - t->x2]);
-
-
-                        // fprintf(stderr, "x2 = %d, y2 = %d\n", t->x2, t->y2);
-                        return 1;
-                    }
+                    // if (X >= t->x2 && Y >= t->y2 && X < (t->x2 + t->current2.w) && 
+                    //     Y < (t->y2 + t->current2.h) && t->current2.data[Y - t->y2][X - t->x2] != '.') {
+                        
+                    //     return 1;
+                    // }
                 }      
             }
         }
@@ -212,10 +247,10 @@ tetris_hittest(struct tetris *t, int player) {
                             (X >= 0 && X < t->w && Y >= 0 && t->game[X][Y] != '.')) {
                         return 1;
                     }
-                    if (X >= t->x && Y >= t->y && X < (t->x + t->current.w) && 
-                        Y < (t->y + t->current.h) && t->current.data[Y - t->y][X - t->x] != '.') {
-                        return 1;
-                    }
+                    // if (X >= t->x && Y >= t->y && X < (t->x + t->current.w) && 
+                    //     Y < (t->y + t->current.h) && t->current.data[Y - t->y][X - t->x] != '.') {
+                    //     return 1;
+                    // }
                 }
                 
             }
@@ -403,20 +438,24 @@ tetris_run(int w, int h) {
             switch (cmd) {
                 case 'a':
                     t.x--;
-                    if (tetris_hittest(&t, PLAYER1))
+                    if (tetris_hittest(&t, PLAYER1) || tetris_collidetest(&t, PLAYER1))
                         t.x++;
                     break;
                 case 'd':
                     t.x++;
-                    if (tetris_hittest(&t, PLAYER1))
+                    if (tetris_hittest(&t, PLAYER1) || tetris_collidetest(&t, PLAYER1))
                         t.x--;
                     break;
                 case 's':
                     t.y++;
-                    if (tetris_hittest(&t, PLAYER1)) {
+                    if (tetris_collidetest(&t, PLAYER1)) {
                         t.y--;
-                        tetris_print_block(&t, PLAYER1);
-                        tetris_new_block(&t, PLAYER1);
+                    } else {
+                        if (tetris_hittest(&t, PLAYER1)) {
+                            t.y--;
+                            tetris_print_block(&t, PLAYER1);
+                            tetris_new_block(&t, PLAYER1);
+                        }
                     }
                     break;
                 case 'w':
@@ -424,20 +463,24 @@ tetris_run(int w, int h) {
                     break;
                 case 'j':
                     t.x2--;
-                    if (tetris_hittest(&t, PLAYER2))
+                    if (tetris_hittest(&t, PLAYER1) || tetris_collidetest(&t, PLAYER2))
                         t.x2++;
                     break;
                 case 'l':
                     t.x2++;
-                    if (tetris_hittest(&t, PLAYER2))
+                    if (tetris_hittest(&t, PLAYER1) || tetris_collidetest(&t, PLAYER2))
                         t.x2--;
                     break;
                 case 'k':
                     t.y2++;
-                    if (tetris_hittest(&t, PLAYER2)) {
+                    if (tetris_collidetest(&t, PLAYER2)) {
                         t.y2--;
-                        tetris_print_block(&t, PLAYER2);
-                        tetris_new_block(&t, PLAYER2);
+                    } else {
+                        if (tetris_hittest(&t, PLAYER2)) {
+                            t.y2--;
+                            tetris_print_block(&t, PLAYER2);
+                            tetris_new_block(&t, PLAYER2);
+                        }
                     }
                     break;
                 case 'i':
