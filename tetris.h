@@ -17,13 +17,11 @@ void tetris_print(struct tetris *t);
 
 void tetris_run(int width, int height);
 
-void tetris_new_block(struct tetris *t);
+void tetris_new_block(struct tetris *t, int player);
 
-void tetris_new_block(struct tetris *t);
+void tetris_print_block(struct tetris *t, int player);
 
-void tetris_print_block(struct tetris *t);
-
-void tetris_rotate(struct tetris *t);
+void tetris_rotate(struct tetris *t, int player);
 
 void tetris_gravity(struct tetris *t);
 

@@ -4,6 +4,6 @@
 
 int
 main(void) {
-    tetris_run(10, 20);
+    tetris_run(15, 20);
     return EXIT_SUCCESS;
 }
