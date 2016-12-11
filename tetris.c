@@ -39,25 +39,25 @@ struct tetris_block blocks[] =
       "OO"}, //O piece
     2, 2
     },
-    {{".T.",
+    {{" T ",
       "TTT"}, //T piece
     3, 2
     },
     {{"IIII"},  //line piece
         4, 1},
     {{"JJ",
-      "J.",  //J piece
-      "J."},
+      "J ",  //J piece
+      "J "},
     2, 3},
     {{"LL",
-      ".L",   //L piece
-      ".L"},
+      " L",   //L piece
+      " L"},
     2, 3},
-    {{"ZZ.",
-      ".ZZ"},  //Z piece
+    {{"ZZ ",
+      " ZZ"},  //Z piece
     3, 2},
-    {{".SS",
-      "SS."},
+    {{" SS",
+      "SS "},
     3, 2}
 };
 
@@ -119,7 +119,7 @@ tetris_init(struct tetris *t,int w,int h) {
     for (x = 0; x < w; x++) {
         t->game[x] = malloc(sizeof(char) * h);
         for (y = 0; y < h; y++)
-            t->game[x][y] = '.';
+            t->game[x][y] = ' ';
     }
 }
 
@@ -147,12 +147,12 @@ tetris_print(struct tetris *t) {
         for (x = 0; x < t->w; x++) {  //Checks and prints chars for pieces
             if (x >= t->x && y >= t->y 
                     && x < (t->x + t->current.w) && y < (t->y + t->current.h) 
-                    && t->current.data[y - t->y][x - t->x] != '.') {
+                    && t->current.data[y - t->y][x - t->x] != ' ') {
                 printf("%c ", t->current.data[y - t->y][x - t->x]);
             }
             else if (x >= t->x2 && y >= t->y2 
                      && x < (t->x2 + t->current2.w) && y < (t->y2 + t->current2.h) 
-                    && t->current2.data[y - t->y2][x - t->x2] != '.') {
+                    && t->current2.data[y - t->y2][x - t->x2] != ' ') {
                 printf("%c ", t->current2.data[y - t->y2][x - t->x2]);
             }
             else {
@@ -174,9 +174,9 @@ int tetris_collidetest(struct tetris *t, int player) {
             for (y = 0; y < b.h; y++) {
                 X = t->x + x;
                 Y = t->y + y;
-                if (b.data[y][x] != '.') {
+                if (b.data[y][x] != ' ') {
                     if (X >= t->x2 && Y >= t->y2 && X < (t->x2 + t->current2.w) && 
-                        Y < (t->y2 + t->current2.h) && t->current2.data[Y - t->y2][X - t->x2] != '.') {
+                        Y < (t->y2 + t->current2.h) && t->current2.data[Y - t->y2][X - t->x2] != ' ') {
                         // fprintf(stderr, "X = %d, Y = %d \n", X, Y);
                         // fprintf(stderr, "current2.w = %d, current2.h = %d \n", t->current2.w, t->current2.h);
                         // fprintf(stderr, "x = %d, y = %d \n", x, y);
@@ -195,9 +195,9 @@ int tetris_collidetest(struct tetris *t, int player) {
             for (y = 0; y < b.h; y++) {
                 X = t->x2 + x;
                 Y = t->y2 + y;
-                if (b.data[y][x] != '.') {
+                if (b.data[y][x] != ' ') {
                     if (X >= t->x && Y >= t->y && X < (t->x + t->current.w) && 
-                        Y < (t->y + t->current.h) && t->current.data[Y - t->y][X - t->x] != '.') {
+                        Y < (t->y + t->current.h) && t->current.data[Y - t->y][X - t->x] != ' ') {
                         return 1;
                     }
                 }
@@ -220,13 +220,13 @@ tetris_hittest(struct tetris *t, int player) {
                 if (X < 0 || X >= t->w) {
                     return 1;
                 }
-                if (b.data[y][x] != '.') {
+                if (b.data[y][x] != ' ') {
                     if ((Y >= t->h) || 
-                            (X >= 0 && X < t->w && Y >= 0 && t->game[X][Y] != '.')) {
+                            (X >= 0 && X < t->w && Y >= 0 && t->game[X][Y] != ' ')) {
                         return 1;
                     }
                     // if (X >= t->x2 && Y >= t->y2 && X < (t->x2 + t->current2.w) && 
-                    //     Y < (t->y2 + t->current2.h) && t->current2.data[Y - t->y2][X - t->x2] != '.') {
+                    //     Y < (t->y2 + t->current2.h) && t->current2.data[Y - t->y2][X - t->x2] != ' ') {
                         
                     //     return 1;
                     // }
@@ -242,13 +242,13 @@ tetris_hittest(struct tetris *t, int player) {
                 if (X < 0 || X >= t->w) {
                     return 1;
                 }
-                if (b.data[y][x] != '.') {
+                if (b.data[y][x] != ' ') {
                     if ((Y >= t->h) || 
-                            (X >= 0 && X < t->w && Y >= 0 && t->game[X][Y] != '.')) {
+                            (X >= 0 && X < t->w && Y >= 0 && t->game[X][Y] != ' ')) {
                         return 1;
                     }
                     // if (X >= t->x && Y >= t->y && X < (t->x + t->current.w) && 
-                    //     Y < (t->y + t->current.h) && t->current.data[Y - t->y][X - t->x] != '.') {
+                    //     Y < (t->y + t->current.h) && t->current.data[Y - t->y][X - t->x] != ' ') {
                     //     return 1;
                     // }
                 }
@@ -288,14 +288,15 @@ tetris_print_block(struct tetris *t, int player) {
         struct tetris_block b = t->current;
         for (x = 0; x < b.w; x++)
             for (y = 0; y < b.h; y++) {
-                if (b.data[y][x] != '.')
+                if (b.data[y][x] != ' ')
                     t->game[t->x + x][t->y + y] = b.data[y][x];
             }
     } else {
         struct tetris_block b = t->current2;
         for (x = 0; x < b.w; x++)
             for (y = 0; y < b.h; y++) {
-                if (b.data[y][x] != '.')
+                if (b.data[y][x] != ' ')
+                        
                     t->game[t->x2 + x][t->y2 + y] = b.data[y][x];
             }
     }
@@ -339,7 +340,7 @@ tetris_rotate(struct tetris *t, int player) {
         t->y2 -= (b.h - s.h) / 2;
         t->current2 = b;
         if (tetris_hittest(t, PLAYER2)) {
-            t->current = s;
+            t->current2 = s;
             t->x2 = x;
             t->y2 = y;
         }
@@ -372,7 +373,7 @@ tetris_fall(struct tetris *t, int l) {
             t->game[x][y] = t->game[x][y-1];
     }
     for (x = 0; x < t->w; x++)
-        t->game[x][0] = '.';
+        t->game[x][0] = ' ';
 }
 
 //Check to clear lines
@@ -383,7 +384,7 @@ tetris_check_lines(struct tetris *t) {
     for (y = t->h - 1; y >= 0; y--) {
         l = 1;
         for (x = 0; x < t->w && l; x++) {
-            if (t->game[x][y] == '.') {
+            if (t->game[x][y] == ' ') {
                 l = 0;
             }
         }
@@ -463,12 +464,12 @@ tetris_run(int w, int h) {
                     break;
                 case 'j':
                     t.x2--;
-                    if (tetris_hittest(&t, PLAYER1) || tetris_collidetest(&t, PLAYER2))
+                    if (tetris_hittest(&t, PLAYER2) || tetris_collidetest(&t, PLAYER2))
                         t.x2++;
                     break;
                 case 'l':
                     t.x2++;
-                    if (tetris_hittest(&t, PLAYER1) || tetris_collidetest(&t, PLAYER2))
+                    if (tetris_hittest(&t, PLAYER2) || tetris_collidetest(&t, PLAYER2))
                         t.x2--;
                     break;
                 case 'k':
