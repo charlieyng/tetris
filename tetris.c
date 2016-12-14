@@ -677,14 +677,14 @@ tetris_run(int w, int h, struct tetris * n, int portno) {
                 if (players[curr_fd] > 0)
                     write(curr_fd, buffer, BUF_SIZE);
             }
-            // fprintf(stderr, "t->x[1] = %d, t->y[1] = %d \n", t->x[1], t->y[1]);
+            /*fprintf(stderr, "t->x[1] = %d, t->y[1] = %d \n", t->x[1], t->y[1]);
             fprintf(stderr, "w = %d, h = %d \n", t->w, t->h);
             fprintf(stderr, "activePlayers = %d\n", t->activePlayers);
             for (int i = 0; i < MAXPLAYERS; i ++) {
                 if (t->active[i] == true) {
                     fprintf(stderr, "Player %d is active\n", i);
                 }
-            }
+            }*/
 
         }
         if (count % 350 == 0) {
