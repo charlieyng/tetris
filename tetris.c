@@ -547,7 +547,7 @@ tetris_level(struct tetris *t) {
 
 //Can take a non-null tetris struct to resume a game
 void
-tetris_run(int w, int h, struct tetris * n) {
+tetris_run(int w, int h, struct tetris * n, int portno) {
     struct timespec tm;
     struct tetris * t;
     char cmd;
@@ -672,7 +672,7 @@ tetris_run(int w, int h, struct tetris * n) {
     while(!terminate) {
         if (cmd == 'y' || cmd == 'Y') {
                 tetris_reset(t);
-                tetris_run(t->w, t->h, t);
+                tetris_run(t->w, t->h, t, portno);
                 terminate = true;
         } else if (cmd == 'n' || cmd == 'N') {
                 tetris_clean(t);

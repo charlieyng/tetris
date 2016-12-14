@@ -15,7 +15,7 @@ void tetris_clean(struct tetris *t);
 
 void tetris_print(struct tetris *t);
 
-void tetris_run(int width, int height, struct tetris *t);
+void tetris_run(int width, int height, struct tetris *t, int portno);
 
 void tetris_new_block(struct tetris *t, int player);
 
