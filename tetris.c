@@ -610,11 +610,13 @@ tetris_run(int w, int h, struct tetris * n, int portno) {
     
     // add stdin to fdset for local host player
     FD_SET(fileno(stdin), &readfds);
-    struct timeval timeout;
-    timeout.tv_sec = 0;
-    timeout.tv_usec = 1000;
     
+    // array for players based on sockets
+    int players[MAXPLAYERS*3];
+    for (i = 0; i < (MAXPLAYERS*3); i++)
+        players[i] = -1;
     
+    players[(fileno(stdin))] = 0;
 
     while (!t->gameover) {
         //nanosleep(&tm, NULL);
@@ -636,9 +638,6 @@ tetris_run(int w, int h, struct tetris * n, int portno) {
             tetris_check_lines(t);
         }
         
-        //printf("Hey!\n");
-        //tetris_print(t);
-        
         // -- SELECT on fds ---
         tempfds = readfds; // make a copy of read set into temp set
         if (pselect(max_fd+1, &tempfds, NULL, NULL, &tm, NULL) < 0)
@@ -650,18 +649,33 @@ tetris_run(int w, int h, struct tetris * n, int portno) {
             newsockfd = accept(sockfd, (struct sockaddr *) &cli_addr, &clilen);            
             if (newsockfd < 0) 
                 error("ERROR on accept");
-            printf("Incoming connection... assigning socket %d.\n", newsockfd);
+            //printf("Incoming connection... assigning socket %d.\n", newsockfd);
             
             // add new socket fd to read set, update max_fd if nesc
             FD_SET(newsockfd, &readfds);
             if (newsockfd > max_fd) 
                 max_fd = newsockfd;
             
+            // increment number of players and check for max
+            if (t->activePlayers == MAXPLAYERS) {
+                close(newsockfd);
+                FD_CLR(newsockfd, &readfds);
+            } else {
+                // assign socket index with player number
+                for (i = 0; i < MAXPLAYERS; i++)
+                {
+                    if (t->active[i] == false) {
+                        t = tetris_addplayer(t, i);
+                        tetris_new_block(t, i);
+                        players[newsockfd] = i;
+                        break;
+                    }
+                }
+            }
+            
             // remove server socket from temp set
             FD_CLR(sockfd, &tempfds);
         }
-        
-        //printf("Got connection before reading\n");
         
         // 2) check all possible active sockets
         for (curr_fd = 0; curr_fd <= max_fd; curr_fd++) {
@@ -681,79 +695,38 @@ tetris_run(int w, int h, struct tetris * n, int portno) {
                 char cmd = read_buffer[0];
                 //printf("%c \n", cmd);
                 
+                // get the current player number based on socket
+                int curr_player = players[curr_fd];
+                
                 
                 //while ((cmd = getchar()) > 0) {
                 switch (cmd) {
                     case 'a':
-                        t->x[PLAYER1]--;   
-                        if (tetris_hittest(t, PLAYER1) || tetris_collidetest(t, PLAYER1)) {
-                            t->x[PLAYER1]++;
+                        t->x[curr_player]--;   
+                        if (tetris_hittest(t, curr_player) || tetris_collidetest(t, curr_player)) {
+                            t->x[curr_player]++;
                         }
                         break;
                     case 'd':
-                        t->x[PLAYER1]++;
-                        if (tetris_hittest(t, PLAYER1) || tetris_collidetest(t, PLAYER1)) {
-                            t->x[PLAYER1]--;
+                        t->x[curr_player]++;
+                        if (tetris_hittest(t, curr_player) || tetris_collidetest(t, curr_player)) {
+                            t->x[curr_player]--;
                         }
                         break;
                     case 's':
-                        t->y[PLAYER1]++;
-                        if (tetris_collidetest(t, PLAYER1)) {
-                            t->y[PLAYER1]--;
+                        t->y[curr_player]++;
+                        if (tetris_collidetest(t, curr_player)) {
+                            t->y[curr_player]--;
                         } else {
-                            if (tetris_hittest(t, PLAYER1)) {
-                                t->y[PLAYER1]--;
-                                tetris_print_block(t, PLAYER1);
-                                tetris_new_block(t, PLAYER1);
+                            if (tetris_hittest(t, curr_player)) {
+                                t->y[curr_player]--;
+                                tetris_print_block(t, curr_player);
+                                tetris_new_block(t, curr_player);
                             }
                         }
                         break;
                     case 'w':
-                        tetris_rotate(t, PLAYER1);
-                        break;
-                    case 'p':
-                        if (t->activePlayers < 5) {
-                            for (int i = 0; i < MAXPLAYERS; i++)
-                            {
-                                if (t->active[i] == false) {
-                                    t = tetris_addplayer(t, i);
-                                    tetris_new_block(t, i);
-                                    break;
-                                }
-                            }
-                        }
-                        break;
-                    case 'm':
-                        if (t->activePlayers > 1) {
-                            t = tetris_removeplayer(t, 0);
-
-                            //Debugging networking not working yet.
-                        }
-                        break;
-                    case 'j':
-                        t->x[1]--;
-                        if (tetris_hittest(t, PLAYER2) || tetris_collidetest(t, PLAYER2))
-                        t->x[1]++;
-                        break;
-                    case 'l':
-                        t->x[1]++;
-                        if (tetris_hittest(t, PLAYER2) || tetris_collidetest(t, PLAYER2))
-                        t->x[1]--;
-                        break;
-                    case 'k':
-                        t->y[3]++;
-                        if (tetris_collidetest(t, PLAYER4)) {
-                            t->y[3]--;
-                        } else {
-                            if (tetris_hittest(t, PLAYER4)) {
-                                t->y[3]--;
-                                tetris_print_block(t, PLAYER4);
-                             tetris_new_block(t, PLAYER4);
-                            }
-                        }
-                        break;
-                    case 'i':
-                        tetris_rotate(t, PLAYER5);
+                        tetris_rotate(t, curr_player);
                         break;
                 }
             }
