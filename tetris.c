@@ -223,26 +223,31 @@ struct tetris * tetris_removeplayer (struct tetris * t, int player) {
     n->gameover = 0;
     n->w = t->w - 5;
     n->h = t->h;
-    t->active[player] = false;
-    for (int i = 0; i < MAXPLAYERS; i++) {
-        n->active[i] = t->active[i];
-        if (t->active[i] == true) {
-            n->x[i] = t->x[i];
-            n->y[i] = t->y[i];
-            n->current[i] = t->current[i];
-        }
-    }
     n->activePlayers = t->activePlayers - 1;
+    t->active[player] = false;
+    
+    
     n->game = malloc(sizeof(char *) * n->w);
     for (int i = 0; i < t->w; i++) {
         if (i < n->w) {
             n->game[i] = t->game[i];
         } else {
             free(t->game[i]);
-            
         }
     }
     free(t->game);
+    for (int i = 0; i < MAXPLAYERS; i++) {
+        n->active[i] = t->active[i];
+        if (t->active[i] == true) {
+            if (t->x[i] + t->current[i].w >= n->w) {
+                tetris_new_block(n, i);
+            } else {
+                n->x[i] = t->x[i];
+                n->y[i] = t->y[i];
+                n->current[i] = t->current[i];
+            }
+        }
+    }
     free(t);
     return n;
 }
@@ -284,6 +289,25 @@ struct tetris * tetris_addplayer (struct tetris *t, int player) {
     free(t->game);
     free(t);
     return n;
+}
+//Resets the game
+void tetris_reset (struct tetris *t) {
+    int x, y;
+    t->level = 1;
+    t->score = 0;
+    t->gameover = 0;
+    for (x = 0; x < t->w; x++) {
+        for (y = 0; y < t->h; y++) {
+            t->game[x][y] = '.';
+        }
+    }
+    for (int i = 0; i < MAXPLAYERS; i++) 
+    {
+        if (t->active[i] == true) {
+            tetris_new_block(t, i);
+        }
+    }
+
 }
 void
 tetris_init(struct tetris *t, int w, int h) {
@@ -337,6 +361,7 @@ tetris_print(struct tetris *t) {
                     && x < (t->x[i] + t->current[i].w) && y < (t->y[i] + t->current[i].h) 
                     && t->current[i].data[y - t->y[i]][x - t->x[i]] != '.') {
                     printf("%c ", t->current[i].data[y - t->y[i]][x - t->x[i]]);
+
                     piece = true;
                 }
             }
@@ -364,11 +389,6 @@ int tetris_collidetest(struct tetris *t, int player) {
                     if (i != player && t->active[i] == true) {
                         if (X >= t->x[i] && Y >= t->y[i] && X < (t->x[i] + t->current[i].w) && 
                             Y < (t->y[i] + t->current[i].h) && t->current[i].data[Y - t->y[i]][X - t->x[i]] != '.') {
-                                // fprintf(stderr, "X = %d, Y = %d \n", X, Y);
-                                // fprintf(stderr, "current2.w = %d, current2.h = %d \n", t->current2.w, t->current2.h);
-                                // fprintf(stderr, "x = %d, y = %d \n", x, y);
-                                // fprintf(stderr, "current2.data[y - t->y2][x - t->x2] = '%c' \n", t->current2.data[y - t->y2][x - t->x2]);
-                                // fprintf(stderr, "x2 = %d, y2 = %d\n", t->x2, t->y2);
                             return 1;
                         }
                     }
@@ -403,6 +423,7 @@ tetris_hittest(struct tetris *t, int player) {
 
 void
 tetris_new_block(struct tetris *t, int player) {
+    int count = 0;
     if (player == 0) {
         t->current[player] = blocks0[random()%TETRIS_PIECES];
     } else if (player == 1) {
@@ -417,8 +438,12 @@ tetris_new_block(struct tetris *t, int player) {
         t->current[player] = blocks4[random()%TETRIS_PIECES];
 
     }
-    t->x[player] = (player + 1) * (t->w / (t->activePlayers + 1)) + 1;
-    fprintf(stderr, "x = %d\n", t->x[player]);
+    for (int i = 0; i < MAXPLAYERS; i++) {
+        if (t->active[i] == true && i < player) {
+                count++; 
+            }
+    }
+    t->x[player] = (count + 1) * (t->w / (t->activePlayers + 1)) + 1;
     t->y[player] = 0;
     if (tetris_hittest(t, player)) {
         t->gameover = 1;
@@ -520,30 +545,41 @@ tetris_level(struct tetris *t) {
     return levels[t->level - 1].nsec;
 }
 
+//Can take a non-null tetris struct to resume a game
 void
-tetris_run(int w, int h) {
+tetris_run(int w, int h, struct tetris * n) {
     struct timespec tm;
-    struct tetris * t = malloc(sizeof(struct tetris));
+    struct tetris * t;
     char cmd;
-    int count = 0;
-    tetris_set_ioconfig();
-    tetris_init(t, w, h);
+    int count = 0;    
     srand(time(NULL));
 
+    if (n == NULL) {
+        t = malloc(sizeof(struct tetris));
+        tetris_set_ioconfig();
+        tetris_init(t, w, h);
+        tetris_new_block(t, PLAYER1);
+    } else {
+        t = n;
+    }
     tm.tv_sec = 0;
     tm.tv_nsec = 1000000;
 
-    tetris_new_block(t, PLAYER1);
+    
 
     while (!t->gameover) {
         nanosleep(&tm, NULL);
         count++;
         if (count % 50 == 0) {
             tetris_print(t);
-            fprintf(stderr, "t->x = %d, t->y = %d \n", t->x[0], t->y[0]);
+           // fprintf(stderr, "t->x[1] = %d, t->y[1] = %d \n", t->x[1], t->y[1]);
             fprintf(stderr, "w = %d, h = %d \n", t->w, t->h);
             fprintf(stderr, "activePlayers = %d\n", t->activePlayers);
-            
+            for (int i = 0; i < MAXPLAYERS; i ++) {
+                if (t->active[i] == true) {
+                    fprintf(stderr, "Player %d is active\n", i);
+                }
+            }
 
         }
         if (count % 350 == 0) {
@@ -584,7 +620,6 @@ tetris_run(int w, int h) {
                         for (int i = 0; i < MAXPLAYERS; i++)
                         {
                             if (t->active[i] == false) {
-                                fprintf(stderr, "adding player %d\n", i);
                                 t = tetris_addplayer(t, i);
                                 tetris_new_block(t, i);
                                 break;
@@ -605,9 +640,9 @@ tetris_run(int w, int h) {
                     t->x[1]++;
                     break;
                 case 'l':
-                    t->x[2]++;
-                    if (tetris_hittest(t, PLAYER3) || tetris_collidetest(t, PLAYER3))
-                    t->x[2]--;
+                    t->x[1]++;
+                    if (tetris_hittest(t, PLAYER2) || tetris_collidetest(t, PLAYER2))
+                    t->x[1]--;
                     break;
                 case 'k':
                     t->y[3]++;
@@ -631,7 +666,20 @@ tetris_run(int w, int h) {
 
     tetris_print(t);
     printf("*** GAME OVER ***\n");
-
-    tetris_clean(t);
-    tetris_cleanup_io();
+    printf("Play again? (y/n) \n");
+    cmd = getchar();
+    bool terminate = false;
+    while(!terminate) {
+        if (cmd == 'y' || cmd == 'Y') {
+                tetris_reset(t);
+                tetris_run(t->w, t->h, t);
+                terminate = true;
+        } else if (cmd == 'n' || cmd == 'N') {
+                tetris_clean(t);
+                tetris_cleanup_io();
+                terminate = true;
+        } else {
+                cmd = getchar();
+        }
+    }
 }
