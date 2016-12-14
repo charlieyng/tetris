@@ -353,7 +353,55 @@ tetris_clean(struct tetris *t) {
     free(t->game);
     free(t);
 }
-
+char * 
+tetris_write(struct tetris *t, char * buffer) {
+    int x, y;
+    bool piece;
+    char temp[100];
+    bzero(buffer, BUF_SIZE);
+    buffer[0] = '\0';
+    for (x = 0; x < 30; x++) {
+        strcat(buffer, "\n");
+    }
+    bzero(temp, 100);
+    sprintf(temp, "[LEVEL: %d | SCORE: %d]\n", t->level, t->score);
+    strcat(buffer, temp);
+    for (x = 0; x < 2 * t->w + 2; x++) {
+        strcat(buffer, "~");
+    }
+    strcat(buffer, "\n");
+    for (y = 0; y < t->h; y++) {
+        strcat(buffer, "!");
+        for (x = 0; x < t->w; x++) {
+            piece = false;
+            for (int i = 0; i < MAXPLAYERS; i++) {
+                if (t->active[i] == true && x >= t->x[i] && y >= t->y[i] 
+                    && x < (t->x[i] + t->current[i].w) && y < (t->y[i] + t->current[i].h) 
+                    && t->current[i].data[y - t->y[i]][x - t->x[i]] != '.') {
+                    bzero(temp, 100);
+                    temp[0] = t->current[i].data[y - t->y[i]][x - t->x[i]];
+                    temp[1] = ' ';
+                    temp[2] = '\0';
+                    strcat(buffer, temp);
+                    piece = true;
+                }
+            }
+            if (piece == false) {
+                bzero(temp, 100);
+                temp[0] = t->game[x][y];
+                temp[1] = ' ';
+                temp[2] = '\0';
+                strcat(buffer, temp);
+            }
+        }
+    strcat(buffer, "!\n");
+    }
+    for (x = 0; x < 2 * t->w + 2; x++) {
+        strcat(buffer, "~");
+    }
+    strcat(buffer, "\n");
+    return buffer;
+}
 void 
 tetris_print(struct tetris *t) {
     int x, y;
