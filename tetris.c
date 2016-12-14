@@ -19,6 +19,7 @@
 #define PLAYER4 3
 #define PLAYER5 4
 #define MAXPLAYERS 5
+#define BUF_SIZE 2048
 
 void error(const char *msg)
 {
@@ -626,10 +627,9 @@ tetris_run(int w, int h, struct tetris * n, int portno) {
     tm.tv_nsec = 1000000;
     
     // initialization and arg checking
-    const int BUF_SIZE = 2048;
     int sockfd, newsockfd, curr_fd, max_fd;
     socklen_t clilen;
-    char buffer[BUF_SIZE];
+    char *buffer = malloc(BUF_SIZE);
     char read_buffer[1];
     struct sockaddr_in serv_addr, cli_addr;
     int i, j;
@@ -671,6 +671,12 @@ tetris_run(int w, int h, struct tetris * n, int portno) {
         count++;
         if (count % 50 == 0) {
             tetris_print(t);
+            bzero(buffer, BUF_SIZE);
+            tetris_write(t, buffer);
+            for (curr_fd = 0; curr_fd <= max_fd; curr_fd++) {
+                if (players[curr_fd] > 0)
+                    write(curr_fd, buffer, BUF_SIZE);
+            }
             // fprintf(stderr, "t->x[1] = %d, t->y[1] = %d \n", t->x[1], t->y[1]);
             fprintf(stderr, "w = %d, h = %d \n", t->w, t->h);
             fprintf(stderr, "activePlayers = %d\n", t->activePlayers);
@@ -730,23 +736,23 @@ tetris_run(int w, int h, struct tetris * n, int portno) {
             
             if (FD_ISSET(curr_fd, &tempfds)) {
                 
+                // get the current player number based on socket
+                int curr_player = players[curr_fd];
+                
                 // read with read buffer
                 bzero(read_buffer, 1);
                 j = read(curr_fd, read_buffer, 1);
                 
                 // handle disconnects
                 if (j == 0) {
+                    t = tetris_removeplayer(t, curr_player);
+                    players[curr_fd] = -1;
                     close(curr_fd);
                     FD_CLR(curr_fd, &readfds);
                 }
                 
-                char cmd = read_buffer[0];
-                //printf("%c \n", cmd);
-                
-                // get the current player number based on socket
-                int curr_player = players[curr_fd];
-                
-                
+                char cmd = read_buffer[0];                
+    
                 //while ((cmd = getchar()) > 0) {
                 switch (cmd) {
                     case 'a':
@@ -784,8 +790,16 @@ tetris_run(int w, int h, struct tetris * n, int portno) {
 
     tetris_print(t);
     printf("*** GAME OVER ***\n");
-    printf("Play again? (y/n) \n");
-    cmd = getchar();
+    //printf("Play again? (y/n) \n");
+    
+    // close connection and all sockets on game over
+    free(buffer);
+    close(sockfd);
+    tetris_clean(t);
+    tetris_cleanup_io();
+    
+    
+    /*cmd = getchar();
     bool terminate = false;
     while(!terminate) {
         if (cmd == 'y' || cmd == 'Y') {
@@ -799,5 +813,5 @@ tetris_run(int w, int h, struct tetris * n, int portno) {
         } else {
                 cmd = getchar();
         }
-    }
+    }*/
 }
