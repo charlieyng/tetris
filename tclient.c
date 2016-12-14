@@ -7,6 +7,8 @@
 #include <netinet/in.h>
 #include <netdb.h> 
 #include <termios.h>
+#include <time.h>
+
 
 
 static const int BUF_SIZE = 2048;
@@ -30,7 +32,11 @@ int max(int num1, int num2) {
 int main(int argc, char *argv[])
 {
     int sockfd, portno, n, w, maxfdp1, numset, fd;
+    fd = fileno(stdin);
     struct termios custom;
+    struct timespec tm;
+    tm.tv_sec = 0;
+    tm.tv_nsec = 1000000;
     struct termios save;
     tcgetattr(fd, &save);
     custom = save;
@@ -71,21 +77,16 @@ int main(int argc, char *argv[])
     FD_SET(sockfd, &readfds);
 
     while (1) {
+        nanosleep(&tm, NULL);
         bzero(buffer, BUF_SIZE);
         tempfds = readfds;
-        numset = select(maxfdp1, &readfds, NULL, NULL, NULL);
+        numset = select(maxfdp1, &tempfds, NULL, NULL, NULL);
+
         if (numset == -1) {
             error("select");
         }
-        if (FD_ISSET(sockfd, &readfds)) {
-            n = read(sockfd, buffer, BUF_SIZE);
-            if (n < 0) {
-                fprintf(stderr, "Client read error\n");
-            }
-            printf("%s", buffer);
-
-        }
-        if (FD_ISSET(fd, &readfds)) {
+        
+        if (FD_ISSET(fd, &tempfds)) {
             cmd = getchar();
             if (cmd == 'a' || cmd == 'w' || cmd  == 's' || cmd == 'd') {
                 buffer[0] = cmd;
@@ -93,11 +94,23 @@ int main(int argc, char *argv[])
             n = write(sockfd, buffer, 1);
             if (n != 1) {
                 fprintf(stderr, "Client write error\n");
-            } else {
-                fprintf(stderr, "Wrote '%c' \n", buffer[0]);
             }
         }
+        if (FD_ISSET(sockfd, &tempfds)) {
+            n = read(sockfd, buffer, BUF_SIZE);
+            if (n == 0) {
+                printf("%s", buffer);
+                printf("*** GAME OVER ***\n");
+                printf("Thanks for playing. Please reconnect to your host to play again.\n");
+                break;
+            }
+            printf("%s", buffer);
+
+        }
     }
+    
+
+
 
     // n = write(sockfd, buffer, strlen(buffer));
     // if (n < 0) 
