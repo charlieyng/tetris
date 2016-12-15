@@ -12,7 +12,7 @@ This will start a tetris game session that clients can join.
 
 To compile the tetris client, use:
 
-	gcc -g tclient.c -lnsl -o tclient
+	gcc -g tclient.c -o tclient
 
 It will output a binary file tclient that can be run with
 
